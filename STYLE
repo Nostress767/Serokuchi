@@ -1,0 +1,40 @@
+# Summary #
+snake_case : filenames (this means that asset variables are snake_case as well), functions, macros
+PascalCase : class names, enum names, main() source file
+camelCase  : everything else
+
+## FILE NAMES ##
+The source file name that defines main() should be PascalCase
+Every other file name should be snake_case
+
+## INCLUDE ORDER ##
+Assume source.c:
+
+1 - source.h
+2 - C headers
+3 - C++ headers
+4 - Other headers
+
+Files in the same group should be in alphabetical order
+
+## FUNCTIONS ##
+snake_case
+
+## MACROS ##
+snake_case
+
+## ENUMS ##
+Name should be PascalCase
+Enums themselves should be camelCase
+Exceptions can be made for acronyms
+
+## CLASSES ##
+PascalCase
+
+## VARIABLES ##
+camelCase
+Exceptions can be made for single letter variables
+
+## METHODS ##
+camelCase
+
