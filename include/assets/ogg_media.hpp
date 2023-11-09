@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "external/miniaudio.h"
 #include "media.hpp"
@@ -20,25 +21,29 @@ class OggMedia : private Media{
 private:
   inline static std::unique_ptr<ma_engine> audioEngine = nullptr;
   inline static std::map<AudioGroup, ma_sound_group> audioGroups;
+  inline static std::map<AudioGroup, i32> audioGroupVolumes;
+  inline static i32 volumeStepAmount = 100;
+  inline static std::vector<f32> volumeSteps;
 
   std::string name;
   ma_sound sound;
 
 public:
   OggMedia(std::string file, u8* bin, size_t sz);
-  ~OggMedia();
 
-  // TODO: add remaining necessary methods
+  bool isLooping();
+/// NOTE: this only works for initialized sounds (i.e. not for ::play)
+  bool isPlaying();
+///
   void load(AudioFlag flags = AudioFlag::defaulto, AudioGroup group = AudioGroup::globalMixer);
   void loadBGM();
-  void unload();
+  void play(AudioGroup group = AudioGroup::SFX);
+  void seek(i32 frame);
   void start();
   void stop();
   void toggle();
-  void seek(i32 frame);
-  void play(AudioGroup group = AudioGroup::SFX);
-  bool isLooping();
-  bool isPlaying();
+  void unload();
+
   static void setGroupVolume(f32 volume, AudioGroup group = AudioGroup::globalMixer);
 };
 
