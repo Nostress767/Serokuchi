@@ -33,25 +33,28 @@ Window::Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, std::wstring name, i32 
   bitmapMemory = std::make_unique<u32[]>(drawingWidth * drawingHeight);
   isRunning = true;
   SetWindowLongPtr(hWnd, 0, (LONG)(this));
+
+  HDC hDc = GetDC(hWnd);
+
+  baseBitmapDC = CreateCompatibleDC(hDc);
+  baseBitmap = CreateCompatibleBitmap(hDc, drawingWidth, drawingHeight);
+  defaultBitmap1 = (HBITMAP)SelectObject(baseBitmapDC, baseBitmap);
+
+  stretchedBitmapDC = CreateCompatibleDC(NULL);
+  stretchedBitmap = CreateCompatibleBitmap(hDc, width, height);
+  defaultBitmap2 = (HBITMAP)SelectObject(stretchedBitmapDC, stretchedBitmap);
+
+  ReleaseDC(hWnd, hDc);
 }
 
 bool Window::isFocused(){ return hasFocus; }
 
 void Window::draw(){
-  if(nothingChanged)
+  if(!newDrawing || !isRunning)
     return;
 
-  // NOTE: could be optimized (reduce the number of calls required/avoid unnecessary calls)
   HDC hDc = GetDC(hWnd);
 
-  HDC baseBitmapDC = CreateCompatibleDC(hDc);
-  HBITMAP baseBitmap = CreateCompatibleBitmap(hDc, drawingWidth, drawingHeight);
-  HBITMAP defaultBitmap1 = (HBITMAP)SelectObject(baseBitmapDC, baseBitmap);
-
-  HDC stretchedBitmapDC = CreateCompatibleDC(NULL);
-  HBITMAP stretchedBitmap = CreateCompatibleBitmap(hDc, width, height);
-  HBITMAP defaultBitmap2 = (HBITMAP)SelectObject(stretchedBitmapDC, stretchedBitmap);
-  
   BITMAPINFO bitmapInfo = {};
   bitmapInfo =
     (BITMAPINFO){.bmiHeader = {.biSize = sizeof(BITMAPINFOHEADER),
@@ -74,15 +77,8 @@ void Window::draw(){
 
   UpdateLayeredWindow(hWnd, hDc, NULL, &sizeWnd, stretchedBitmapDC, &pSrc, 0, &blendFunc, ULW_ALPHA);
 
-  SelectObject(baseBitmapDC, defaultBitmap1);
-  DeleteObject(baseBitmap);
-  DeleteDC(baseBitmapDC);
-  SelectObject(stretchedBitmapDC, defaultBitmap2);
-  DeleteObject(stretchedBitmap);
-  DeleteDC(stretchedBitmapDC);
-
   ReleaseDC(hWnd, hDc);
-  nothingChanged = true;
+  newDrawing = false;
 }
 
 void Window::endFrame() {
@@ -100,21 +96,39 @@ void Window::endFrame() {
 
 void Window::c(u32 color) {
   std::fill_n(bitmapMemory.get(), drawingWidth * drawingHeight, color);
-  nothingChanged = false;
+  newDrawing = true;
 }
 
-void Window::d(i32 x, i32 y, u32 color) {
-  // TODO: investigate transparency bug
-  if(x < 0 || y < 0 || x >= drawingWidth || y >= drawingHeight)// || (color & 0xFF000000) == 0)
+void Window::d(i32 x, i32 y, u32 color, bool zeroAlpha) {
+  // NOTE: zeroAlpha = true allows transparent pixels (alpha = 0) to be drawn, allowing you to see through windows
+  if(!zeroAlpha && (color & alphaChannel) == 0)
     return;
+  // Out of window drawing bounds
+  if(x < 0 || y < 0 || x >= drawingWidth || y >= drawingHeight)
+    return;
+  // No point in redrawing a pixel of the same color
+  if(bitmapMemory[y * drawingWidth + x] == color)
+    return;
+
   bitmapMemory[y * drawingWidth + x] = color;
-  nothingChanged = false;
+  newDrawing = true;
 }
 
 void Window::setWindowSize(i32 sizeX, i32 sizeY) {
   width = sizeX;
   height = sizeY;
-  nothingChanged = false;
+
+  SelectObject(stretchedBitmapDC, defaultBitmap2);
+  DeleteObject(stretchedBitmap);
+  DeleteDC(stretchedBitmapDC);
+
+  HDC hDc = GetDC(hWnd);
+  stretchedBitmapDC = CreateCompatibleDC(NULL);
+  stretchedBitmap = CreateCompatibleBitmap(hDc, width, height);
+  defaultBitmap2 = (HBITMAP)SelectObject(stretchedBitmapDC, stretchedBitmap);
+  ReleaseDC(hWnd, hDc);
+
+  newDrawing = true;
   draw();
 }
 

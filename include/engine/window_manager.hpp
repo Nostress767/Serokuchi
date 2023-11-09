@@ -14,6 +14,8 @@ private:
 
   WNDCLASS windowClass = {};
 
+  i32 windowScale;
+
   std::unique_ptr<Window> root = nullptr;
   std::map<std::wstring, std::shared_ptr<Window>> windows;
   std::map<i32, std::shared_ptr<Window>> windowsDrawingOrder;
@@ -25,7 +27,7 @@ private:
   std::array<Joystick, 4> J = {};
 
 public:
-  WindowManager(i32 sizeX, i32 sizeY, std::wstring name);
+  WindowManager(std::wstring name, i32 sizeX, i32 sizeY, i32 scale = 1);
 
   void resetClock();
 
@@ -40,7 +42,8 @@ public:
   void updateJoystickState();
   void sendRumble(i32 controller, u16 left, u16 right);
   void removeWindow(std::wstring windowKey);
-  void createWindow(i32 windowZOrder, i32 windowSizeX, i32 windowSizeY, std::wstring windowTitle);
+  void createWindow(std::wstring windowTitle, i32 windowZOrder);
+  void createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY);
   void draw();
   void drawWindows();
   void drawAll();

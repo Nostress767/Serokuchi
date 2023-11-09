@@ -14,6 +14,7 @@
 #include "sprite.hpp"
 
 enum class WindowType { root, other };
+enum PixelColorChannel { alphaChannel = 0xFF000000, redChannel = 0xFF0000, greenChannel = 0xFF00, blueChannel = 0xFF };
 
 struct Window {
   inline static std::map<i32, HWND> windowOrder;
@@ -28,20 +29,20 @@ struct Window {
   i32 offsetX = -1, offsetY = -1;
   i32 zOrder = -1;
   // TODO: implement lockWindowMovement using isMovable
-  bool isRunning = false, hasFocus = false, isFullscreen = false, isMovable = false, isMoving = false, nothingChanged = false;
+  bool isRunning = false, hasFocus = false, isFullscreen = false, isMovable = false, isMoving = false, newDrawing = true;
 
   Mouse mouse = {};
 
   std::unique_ptr<u32[]> bitmapMemory = nullptr;
 
   // NOTE: could be used if more performance is required
-  //HDC baseBitmapDC = NULL;
-  //HBITMAP baseBitmap = {};
-  //HBITMAP defaultBitmap1 = {};
+  HDC baseBitmapDC = NULL;
+  HBITMAP baseBitmap = {};
+  HBITMAP defaultBitmap1 = {};
 
-  //HDC stretchedBitmapDC = NULL;
-  //HBITMAP stretchedBitmap = {};
-  //HBITMAP defaultBitmap2 = {};
+  HDC stretchedBitmapDC = NULL;
+  HBITMAP stretchedBitmap = {};
+  HBITMAP defaultBitmap2 = {};
 
   Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, std::wstring name, i32 zOrder, WindowType wndType = WindowType::other);
 
@@ -50,7 +51,7 @@ struct Window {
   void draw();
   void endFrame();
   void c(u32 color);
-  void d(i32 x, i32 y, u32 color);
+  void d(i32 x, i32 y, u32 color, bool zeroAlpha = false);
   void setWindowSize(i32 sizeX, i32 sizeY);
 
   // TODO: reinvestigate these two functions
