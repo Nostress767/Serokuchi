@@ -23,11 +23,11 @@ private:
   bool isFullscreen = false, isRunning = false;
 
   Clock clk = {};
-  std::array<Key, 256> K = {};
-  std::array<Joystick, 4> J = {};
+  std::unique_ptr<Key[]> K = nullptr;
+  std::unique_ptr<Joystick[]> J = nullptr;
 
 public:
-  WindowManager(std::wstring name, i32 sizeX, i32 sizeY, i32 scale = 1);
+  WindowManager(std::wstring name, i32 sizeX, i32 sizeY);
 
   void resetClock();
 
@@ -42,8 +42,7 @@ public:
   void updateJoystickState();
   void sendRumble(i32 controller, u16 left, u16 right);
   void removeWindow(std::wstring windowKey);
-  void createWindow(std::wstring windowTitle, i32 windowZOrder);
-  void createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY);
+  void createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY, i32 scale);
   void draw();
   void drawWindows();
   void drawAll();

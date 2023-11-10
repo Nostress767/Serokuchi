@@ -116,6 +116,14 @@ void Window::d(i32 x, i32 y, u32 color, bool zeroAlpha) {
   newDrawing = true;
 }
 
+void Window::dSquare(i32 size, i32 x, i32 y, u32 color, bool zeroAlpha){
+  i32 xLimit = x + size;
+  i32 yLimit = y + size;
+  for(i32 i = x; i < xLimit; i++)
+    for(i32 j = y; j < yLimit; j++)
+      d(i, j, color, zeroAlpha);
+}
+
 void Window::setWindowSize(i32 sizeX, i32 sizeY) {
   width = sizeX;
   height = sizeY;
@@ -167,7 +175,7 @@ void Window::drawText(PngMedia& png, i32 x, i32 y, std::string text, u32 color, 
       text_x += (png.getWidth() / 16 + space_x) * scale ;}}
 }
 
-void Window::drawSprite(Sprite *spr) {
+void Window::dSprite(Sprite *spr) {
   for (i32 i = 0; i < spr->height; i++)
     for (i32 j = 0; j < spr->width; j++)
       d(spr->x + j, spr->y + i, spr->data[i][j * 4 + 3] << 24 | spr->data[i][j * 4] << 16 | spr->data[i][j * 4 + 1] << 8 | spr->data[i][j * 4 + 2] << 0);

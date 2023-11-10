@@ -1,10 +1,11 @@
 //#define show_message_loop
 #include "engine/window_manager.hpp"
 
-WindowManager::WindowManager(std::wstring name, i32 sizeX, i32 sizeY, i32 scale){
+WindowManager::WindowManager(std::wstring name, i32 sizeX, i32 sizeY){
+  K = std::make_unique<Key[]>(256);
+  J = std::make_unique<Joystick[]>(4);
   log_debug("Args: (sizeX : " << sizeX << ", sizeY : " << sizeY << ", name : " << name << ")");
   isRunning = true;
-  windowScale = scale;
 
   user32Library = LoadLibraryA("user32.dll");
   if(user32Library){
@@ -67,7 +68,8 @@ WindowManager::WindowManager(std::wstring name, i32 sizeX, i32 sizeY, i32 scale)
           }
           else if(LOWORD(wParam) == WA_ACTIVE){
             // NOTE: root has zOrder 0
-            if(Window::windowOrder.contains(0) && Window::windowOrder[0] == hWnd)
+            // NOTE: is it bad to comment this out?
+            //if(Window::windowOrder.contains(0) && Window::windowOrder[0] == hWnd)
               for(auto &[_, wHandle] : Window::windowOrder)
                 SetWindowPos(wHandle, HWND_TOP, -1, -1, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
           }
@@ -214,8 +216,8 @@ WindowManager::WindowManager(std::wstring name, i32 sizeX, i32 sizeY, i32 scale)
   windowClass.cbWndExtra = sizeof(void*);
 
   RegisterClass(&windowClass);
-  root = std::make_unique<Window>(windowClass, sizeX, sizeY, name, 0, WindowType::root);
-  root->setWindowSize(root->width * windowScale, root->height * windowScale);
+  root = std::make_unique<Window>(windowClass, sizeX, sizeY, 1, name, 0, WindowType::root);
+  //root->setWindowSize(root->width * windowScale, root->height * windowScale);
 }
 
 void WindowManager::beginFrame() {
@@ -512,12 +514,8 @@ void WindowManager::removeWindow(std::wstring windowKey){
   windows.erase(windowKey);
 }
 
-void WindowManager::createWindow(std::wstring windowTitle, i32 windowZOrder){
-  createWindow(windowTitle, windowZOrder, root->drawingWidth, root->drawingHeight);
-}
-
-void WindowManager::createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY){
-  std::shared_ptr<Window> newWindow = std::make_shared<Window>(windowClass, windowSizeX, windowSizeY, windowTitle, windowZOrder);
+void WindowManager::createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY, i32 scale){
+  std::shared_ptr<Window> newWindow = std::make_shared<Window>(windowClass, windowSizeX, windowSizeY, scale, windowTitle, windowZOrder);
   windows[windowTitle] = newWindow;
   windowsDrawingOrder[windowZOrder] = newWindow;
 

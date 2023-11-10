@@ -13,6 +13,8 @@
 #include "input.hpp"
 #include "sprite.hpp"
 
+#define ARGB(a, r, g, b) ((a << 24) | (r << 16) | (g << 8) | b)
+
 enum class WindowType { root, other };
 enum PixelColorChannel { alphaChannel = 0xFF000000, redChannel = 0xFF0000, greenChannel = 0xFF00, blueChannel = 0xFF };
 
@@ -52,6 +54,7 @@ struct Window {
   void endFrame();
   void c(u32 color);
   void d(i32 x, i32 y, u32 color, bool zeroAlpha = false);
+  void dSquare(i32 size, i32 x, i32 y, u32 color, bool zeroAlpha = false);
   void setWindowSize(i32 sizeX, i32 sizeY);
 
   // TODO: reinvestigate these two functions
@@ -60,6 +63,6 @@ struct Window {
   // hence the division by 16 and 6 on width and height
   // (since we load the entire image and only draw parts of it)
   void drawText(PngMedia& spr, i32 x, i32 y, std::string text, u32 color, i32 scale, i32 spaceX, i32 spaceY);
-  void drawSprite(Sprite *spr);
+  void dSprite(Sprite *spr);
 };
 

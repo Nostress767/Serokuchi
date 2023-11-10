@@ -14,11 +14,12 @@
 
 /* NOTE: about layers (in maps):
  *
- * 
- *
- *
+ * 6 - Cursor
+ * 5 - Menu text/icons/portraits
+ * 4 - Cursor selection
+ * 3 - Menu frames/etc
  * 2 - Characters sprites
- * 1 - 
+ * 1 - Selection
  * 0 - Map/Background tiles (can have animation)
  *
 */
@@ -28,10 +29,15 @@ i32 main(void) {
   // 1600x900  (1) 400x225 (4)
   // 960x540   (1) 240x135 (4)
   //WindowManager wm(L"Serokuchi", 320, 180, 3);
-  WindowManager wm(L"Serokuchi", 480, 270, 2);
-  wm.createWindow(L"Layer 0", 1);
-  wm.createWindow(L"Layer 0.5", 2);
-  wm.createWindow(L"Layer 1", 3);
+  WindowManager wm(L"Serokuchi", 960, 540);
+  wm.createWindow(L"Layer 6", 8, 480, 270, 2);
+  wm.createWindow(L"Layer 5", 7, 480, 270, 2);
+  wm.createWindow(L"Layer 4", 6, 480, 270, 2);
+  wm.createWindow(L"Layer 3", 5, 480, 270, 2);
+  wm.createWindow(L"Layer 2.5", 4, 480, 270, 2);
+  wm.createWindow(L"Layer 2", 3, 320, 180, 3);
+  wm.createWindow(L"Layer 1", 2, 480, 270, 2);
+  wm.createWindow(L"Layer 0", 1, 480, 270, 2);
 
   thread_local unsigned constexpr long static long const int * const 何 = {nullptr};
 
@@ -39,12 +45,31 @@ i32 main(void) {
 
   Sprite test_spr(&aristotelio_portrait_black);
   Sprite test_spr2(&aristotelio_map);
+  Sprite test_spr2_5(&aristotelio_map);
+  Sprite test_spr3(&overworld);
+  Sprite test_spr4(&aristotelio_reduced_portrait_black);
   test_spr.x = 40;
   test_spr.y = 40;
-  test_spr2.x = 240;
+  test_spr2.x = 296;
   test_spr2.y = 40;
+  test_spr2_5.x = 456;
+  test_spr2_5.y = 30;
+  test_spr4.x = 386;
+  test_spr4.y = 140;
 
-  wm[L"Layer 1"]->c(0);
+  //wm[L"Layer 1"]->c(0);
+  wm[L"Layer 0"]->dSprite(&test_spr3);
+  wm[L"Layer 2"]->dSprite(&test_spr2);
+  wm[L"Layer 2.5"]->dSprite(&test_spr2_5);
+
+  wm[L"Layer 1"]->dSquare(24, 50, 180, ARGB(1, 0, 32, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 80, 180, ARGB(1, 0, 64, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 110, 180, ARGB(1, 0, 96, 0), true);
+
+  wm[L"Layer 1"]->dSquare(24, 200, 30, ARGB(1, 32, 0, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 230, 30, ARGB(1, 64, 0, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 260, 30, ARGB(1, 96, 0, 0), true);
+
   while(wm.shouldRun()){
     if (wm('F').isPressed){
       map_test.loadMap();
@@ -64,25 +89,12 @@ i32 main(void) {
     if (wm('P').isPressed){
       break;
     }
-    if (wm('R').isPressed){
-      wm[L"Layer 0.5"]->c(0);
-      //wm.removeWindow("Layer 0.5");
-    }
-    if (wm('T').isPressed){
-      wm[L"Layer 0.5"]->c(0xFF00FF00);
-    }
 
-    for(i32 i = 40; i < 560; i++){
-      for(i32 j = 20; j < 200; j++){
-        wm[L"Layer 1"]->d(i, j, 0, true);
-      }
-    }
-
-    wm[L"Layer 0"]->c(0);
-    wm[L"Layer 0"]->drawSprite(&test_spr);
-    wm[L"Layer 0"]->drawSprite(&test_spr2);
-    wm[L"Layer 0"]->drawText(font8x8, 0, 30, "FPS: " + std::to_string(wm.getFPS()), 0xFFFF0000, 2, -2, 10);
-    wm[L"Layer 0"]->drawText(font8x8, 0, 10, "We had a lot of fun growing up", 0xFFFF0000, 2, -2, 10);
+    wm[L"Layer 5"]->c(0);
+    wm[L"Layer 5"]->dSprite(&test_spr);
+    wm[L"Layer 5"]->dSprite(&test_spr4);
+    wm[L"Layer 5"]->drawText(font8x8, 0, 30, "FPS: " + std::to_string(wm.getFPS()), 0xFFFF0000, 2, -2, 10);
+    wm[L"Layer 5"]->drawText(font8x8, 0, 10, "We had a lot of fun growing up", 0xFFFF0000, 2, -2, 10);
   }
 
   return 0;
