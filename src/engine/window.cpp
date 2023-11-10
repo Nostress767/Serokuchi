@@ -3,6 +3,7 @@
 
 Window::Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, i32 scale, std::wstring name, i32 zOrder, WindowType wndType){
   title = name;
+  this->scale = scale;
   drawingWidth = sizeX;
   drawingHeight = sizeY;
   width = previousWidth = sizeX * scale;
@@ -125,8 +126,8 @@ void Window::dSquare(i32 size, i32 x, i32 y, u32 color, bool zeroAlpha){
 }
 
 void Window::setWindowSize(i32 sizeX, i32 sizeY) {
-  width = sizeX;
-  height = sizeY;
+  width = sizeX * scale;
+  height = sizeY * scale;
 
   SelectObject(stretchedBitmapDC, defaultBitmap2);
   DeleteObject(stretchedBitmap);

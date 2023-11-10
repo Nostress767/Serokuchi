@@ -25,6 +25,7 @@ struct Window {
 
   std::wstring title;
 
+  i32 scale = -1;
   i32 width = -1, drawingWidth = -1, previousWidth = -1;
   i32 height = -1, drawingHeight = -1, previousHeight = -1;
   i32 currentPosX = -1, currentPosY = -1;
