@@ -55,7 +55,7 @@ endef
 # Resource canned recipe
 define CREATE_RSC_OBJ =
 	@mkdir -p $(dir $@)
-	cd $(dir $<) && objcopy -I binary -O pe-i386 -B i386 $(notdir $<) $(basename $(abspath $@)).o
+	cd $(dir $<) && objcopy -I binary -O pe-i386 -B i386 $(notdir $<) "$(basename $(abspath $@)).o"
 endef
 
 #############
