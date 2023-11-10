@@ -1,12 +1,14 @@
 #include "engine/window.hpp"
 #include <algorithm>
 
-Window::Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, std::wstring name, i32 zOrder, WindowType wndType){
+Window::Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, i32 scale, std::wstring name, i32 zOrder, WindowType wndType){
   title = name;
-  currentPosX = (GetSystemMetrics(SM_CXSCREEN) / 2) - (sizeX / 2);
-  currentPosY = (GetSystemMetrics(SM_CYSCREEN) / 2) - (sizeY / 2);
-  width = previousWidth = drawingWidth = sizeX;
-  height = previousHeight = drawingHeight = sizeY;
+  drawingWidth = sizeX;
+  drawingHeight = sizeY;
+  width = previousWidth = sizeX * scale;
+  height = previousHeight = sizeY * scale;
+  currentPosX = (GetSystemMetrics(SM_CXSCREEN) / 2) - (width / 2);
+  currentPosY = (GetSystemMetrics(SM_CYSCREEN) / 2) - (height / 2);
   offsetX = 0; offsetY = 0;
   this->zOrder = zOrder;
 

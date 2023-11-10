@@ -23,9 +23,9 @@ struct Window {
 
   std::wstring title;
 
-  i32 currentPosX = -1, currentPosY = -1;
   i32 width = -1, drawingWidth = -1, previousWidth = -1;
   i32 height = -1, drawingHeight = -1, previousHeight = -1;
+  i32 currentPosX = -1, currentPosY = -1;
   i32 offsetX = -1, offsetY = -1;
   i32 zOrder = -1;
   // TODO: implement lockWindowMovement using isMovable
@@ -44,7 +44,7 @@ struct Window {
   HBITMAP stretchedBitmap = {};
   HBITMAP defaultBitmap2 = {};
 
-  Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, std::wstring name, i32 zOrder, WindowType wndType = WindowType::other);
+  Window(WNDCLASS &wndClass, i32 sizeX, i32 sizeY, i32 scale, std::wstring name, i32 zOrder, WindowType wndType = WindowType::other);
 
   bool isFocused();
   //void beginFrame();
