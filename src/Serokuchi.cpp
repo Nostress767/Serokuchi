@@ -73,10 +73,23 @@ i32 main(void) {
   wm[L"Layer 1"]->dSquare(24, 260, 30, ARGB(1, 96, 0, 0), true);
 
   bool toggleMap = false;
+  bool killedAllWindows = false;
   i32 cameraX = 0, cameraY = 0;
 
   const i32 tileSize = 24;
   while(wm.shouldRun()){
+    if(killedAllWindows){
+      if(wm('E').isPressed)
+        test_music.toggle();
+      if(wm('P').isPressed)
+        break;
+      continue;
+    }
+    if(wm('O').isPressed){
+      wm.removeAllWindows();
+      killedAllWindows = true;
+      continue;
+    }
     if(wm('F').isPressed){
       map_test.loadMap();
       auto test = map_test.getLayerData(FLOOR);

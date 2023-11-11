@@ -42,6 +42,7 @@ public:
   void updateJoystickState();
   void sendRumble(i32 controller, u16 left, u16 right);
   void removeWindow(std::wstring windowKey);
+  void removeAllWindows();
   void createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY, i32 scale);
   void draw();
   void drawWindows();

@@ -262,6 +262,9 @@ void WindowManager::endFrame() {
   K[static_cast<i32>(SpecialKey::rightAlt)].isHeld = false;
   K[static_cast<i32>(SpecialKey::leftSuper)].isHeld = false;
   K[static_cast<i32>(SpecialKey::rightSuper)].isHeld = false;
+
+  for(auto [_, win] : windows)
+    win->endFrame();
 }
 
 void WindowManager::resetClock(){ clk.reset(); }
@@ -512,6 +515,16 @@ void WindowManager::removeWindow(std::wstring windowKey){
   DestroyWindow(windows[windowKey]->hWnd);
   windowsDrawingOrder.erase(windows[windowKey]->zOrder);
   windows.erase(windowKey);
+}
+
+void WindowManager::removeAllWindows(){
+  for(auto [_, win] : windows){
+    DestroyWindow(win->hWnd);
+    log_debug("Destroyed window \"" << win->title << "\" (" << win->hWnd << ")");
+  }
+
+  windowsDrawingOrder.clear();
+  windows.clear();
 }
 
 void WindowManager::createWindow(std::wstring windowTitle, i32 windowZOrder, i32 windowSizeX, i32 windowSizeY, i32 scale){
