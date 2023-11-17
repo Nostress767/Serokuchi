@@ -16,7 +16,8 @@ namespace TimeUnit{
 class Clock {
   private:
   std::chrono::time_point<std::chrono::system_clock> start, past, now;
-  u64 totalFrames = 0, frame = 0, framesLastSecond = 0;
+  u64 totalFrames = 0;
+  u16 frame = 0, framesLastSecond = 0;
 
   public:
   Clock();
@@ -33,8 +34,8 @@ class Clock {
   double getLastSecondElapsed();
 
   u64 getFrame();
-  u64 getTotalFrames();
-  u64 getFPS();
+  u16 getTotalFrames();
+  u16 getFPS();
   double get();
 
   Clock& tick();

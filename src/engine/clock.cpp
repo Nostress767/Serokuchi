@@ -33,8 +33,8 @@ double Clock::getLastSecondElapsed(){
 }
 
 u64 Clock::getFrame(){ return frame; }
-u64 Clock::getTotalFrames(){ return totalFrames; }
-u64 Clock::getFPS(){ return framesLastSecond; }
+u16 Clock::getTotalFrames(){ return totalFrames; }
+u16 Clock::getFPS(){ return framesLastSecond; }
 double Clock::get(){ return getLastFrameElapsed<TimeUnit::seconds>(); }
 
 Clock& Clock::tick(){
