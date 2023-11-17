@@ -68,6 +68,18 @@ void Window::draw(){
                                .biCompression = BI_RGB}};
 
   SetDIBits(hDc, baseBitmap, 0, drawingHeight, bitmapMemory.get(), &bitmapInfo, DIB_RGB_COLORS);
+
+  //bool anySpritesChanged = false;
+  //std::for_each(spritesDrawingOrder.cbegin(), spritesDrawingOrder.cend(), [&](const auto& n) { if(n.second->changed) anySpritesChanged = true; });
+  // Loop and draw all the sprites
+  //if(anySpritesChanged)
+  std::for_each(spritesDrawingOrder.cbegin(), spritesDrawingOrder.cend(), [&](const auto& n) {
+    n.second->draw(baseBitmapDC, spritesData[n.second->spriteData]->bitmapDC);
+  });
+  //for(auto& spr : sprites){
+  //  spr.draw(baseBitmapDC, spriteData[spr->spriteData]->bitmapDC);
+  //}
+
   StretchBlt(stretchedBitmapDC, 0, 0, width, height, baseBitmapDC, 0, 0, drawingWidth, drawingHeight, SRCCOPY);
 
   BLENDFUNCTION blendFunc = {};
@@ -82,6 +94,21 @@ void Window::draw(){
 
   ReleaseDC(hWnd, hDc);
   newDrawing = false;
+}
+
+void Window::createSprite(std::string name, PngMedia& image, i32 layer){
+  createSprite(name, image, 0, 0, layer);
+}
+
+void Window::createSprite(std::string name, PngMedia& image, i32 x, i32 y, i32 layer){
+  if(!spritesData.contains(&image)){
+    // NOTE: does this require std::move ?
+    spritesData[&image] = image.getBitmapData(hWnd);
+  }
+  std::shared_ptr<Sprite> newSpr = std::make_shared<Sprite>(image, spritesData[&image]->bitmapWidth, spritesData[&image]->bitmapHeight, x, y);
+  sprites[name] = newSpr;
+  spritesDrawingOrder.insert({layer, newSpr});
+  log_debug("Loaded sprite on Window \"" << title << "\" has: name=\"" << name.c_str() << "\", width=" << spritesData[&image]->bitmapWidth << ", height=" << spritesData[&image]->bitmapHeight <<  ", x=" << x << ", y=" << y << ", layer=" << layer);
 }
 
 void Window::endFrame() {
@@ -149,36 +176,37 @@ void Window::setWindowSize(i32 sizeX, i32 sizeY) {
 // hence the division by 16 and 6 on width and height
 // (since we load the entire image and only draw parts of it)
 void Window::drawText(PngMedia& png, i32 x, i32 y, std::string text, u32 color, i32 scale, i32 space_x, i32 space_y){
-  if(png.getData().empty())
-    png.load();
+  return;
+  //if(!png.getData())
+  //  png.load();
 
-  i32 text_x = 0, text_y = 0;
-  size_t str_len = text.length();
+  //i32 text_x = 0, text_y = 0;
+  //size_t str_len = text.length();
 
-  for(size_t i = 0; i < str_len; i++){
-    if(text[i] == '\n'){
-      text_x = 0; text_y -= png.getHeight() / 6 * scale + space_y;}
-    else{
-      u32 char_index_x = (text[i] - 32) % 16, char_index_y = (text[i] - 32) / 16;
-      if(scale > 1){
-        for(i32 j = 0; j < png.getWidth() / 16; j++)
-          for(i32 k = 0; k < png.getHeight() / 6; k++)
-            if(png.getData()[k + char_index_y * png.getHeight() / 6][(j + char_index_x * png.getWidth() / 16) * 4])
-              for (i32 scaled_i = 0; scaled_i < scale; scaled_i++)
-                for (i32 scaled_j = 0; scaled_j < scale; scaled_j++)
-                  d(x + text_x + (j * scale) + scaled_i, y + text_y + (k * scale) + scaled_j, color);
-      }
-      else{
-        for(i32 j = 0; j < png.getWidth() / 16; j++)
-          for(i32 k = 0; k < png.getHeight() / 6; k++)
-            if(png.getData()[k + char_index_y * png.getHeight() / 6][(j + char_index_x * png.getWidth() / 16) * 4])
-              d(x + text_x + j, y + text_y + k, color);}
-      text_x += (png.getWidth() / 16 + space_x) * scale ;}}
+  //for(size_t i = 0; i < str_len; i++){
+  //  if(text[i] == '\n'){
+  //    text_x = 0; text_y -= png.getHeight() / 6 * scale + space_y;}
+  //  else{
+  //    u32 char_index_x = (text[i] - 32) % 16, char_index_y = (text[i] - 32) / 16;
+  //    if(scale > 1){
+  //      for(i32 j = 0; j < png.getWidth() / 16; j++)
+  //        for(i32 k = 0; k < png.getHeight() / 6; k++)
+  //          if(png.getData()[(k + char_index_y * png.getHeight() / 6) * png.getWidth() + j + char_index_x * png.getWidth() / 16])
+  //            for (i32 scaled_i = 0; scaled_i < scale; scaled_i++)
+  //              for (i32 scaled_j = 0; scaled_j < scale; scaled_j++)
+  //                d(x + text_x + (j * scale) + scaled_i, y + text_y + (k * scale) + scaled_j, color);
+  //    }
+  //    else{
+  //      for(i32 j = 0; j < png.getWidth() / 16; j++)
+  //        for(i32 k = 0; k < png.getHeight() / 6; k++)
+  //          if(png.getData()[(k + char_index_y * png.getHeight() / 6) * png.getWidth() + j + char_index_x * png.getWidth() / 16])
+  //            d(x + text_x + j, y + text_y + k, color);}
+  //    text_x += (png.getWidth() / 16 + space_x) * scale ;}}
 }
 
-void Window::dSprite(Sprite *spr) {
-  for (i32 i = 0; i < spr->height; i++)
-    for (i32 j = 0; j < spr->width; j++)
-      d(spr->x + j, spr->y + i, spr->data[i][j * 4 + 3] << 24 | spr->data[i][j * 4] << 16 | spr->data[i][j * 4 + 1] << 8 | spr->data[i][j * 4 + 2] << 0);
-}
+//void Window::dSprite(Sprite *spr) {
+//  for (i32 i = 0; i < spr->height; i++)
+//    for (i32 j = 0; j < spr->width; j++)
+//      d(spr->x + j, spr->y + i, spr->data[i * spr->width + j]);
+//}
 

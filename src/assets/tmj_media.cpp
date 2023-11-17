@@ -10,20 +10,32 @@
 #include "engine/clock.hpp"
 #include "external/stb_image.h"
 
-// TODO
 TmjMedia::TmjMedia(std::string file, u8* bin, size_t sz) : Media(bin, sz) {
-  loadMap();
+  json_stream json;
+  json_open_string(&json, (const char*)getRawData());
+  json_set_streaming(&json, false);
+  parse(&json, mapa);
+  json_close(&json);
+
+  // NOTE: until I find a better way to do this, this is enough
+  for(auto& layer : layers){
+    layersMap[layer.name] = layer;
+    log_debug("[" << file.c_str() << "] Detected layer " << layer.name.c_str());
+  }
+  for(auto& tileset : tilesets){
+    tilesetsMap[tileset.name] = tileset;
+    log_debug("[" << file.c_str() << "] Detected tileset " << tileset.name.c_str());
+  }
 }
 
-//TODO: change tabs
-int base64_decode(const std::string input, char *output, size_t output_len) {
+i32 base64_decode(const std::string input, char *output, size_t output_len) {
   size_t input_len = input.size();
   // Base64 characters lookup table
   const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
   size_t input_idx = 0, output_idx = 0;
-  unsigned int buffer = 0;
-  int bits_remaining = 0;
+  u32 buffer = 0;
+  i32 bits_remaining = 0;
 
   while (input_idx < input_len) {
     char c = input[input_idx++];
@@ -35,7 +47,7 @@ int base64_decode(const std::string input, char *output, size_t output_len) {
       // Invalid character, not part of Base64 encoding
       return -1;
     }
-    int value = ptr - base64_chars;
+    i32 value = ptr - base64_chars;
 
     // Append the bits of the current Base64 character to the buffer
     buffer = (buffer << 6) | value;
@@ -51,29 +63,8 @@ int base64_decode(const std::string input, char *output, size_t output_len) {
   return output_idx; // Return the length of the decoded binary data
 }
 
-std::shared_ptr<i32[]> bytes_to_integers(const char* input, int input_len, int* output_len) {
-  if (input_len % sizeof(int) != 0) {
-    log_error("Input length is not a multiple of the integer size.");
-    return NULL;
-  }
-
-  *output_len = input_len / sizeof(int);
-  std::shared_ptr<i32[]> output_array = std::make_shared<i32[]>(*output_len);
-
-  for (int i = 0; i < *output_len; i++) {
-    output_array[i] = 0;
-
-    // Convert each byte to an integer in little-endian format
-    for (size_t j = 0; j < sizeof(int); j++) {
-      output_array[i] |= (unsigned char)input[i * sizeof(int) + j] << (8 * j);
-    }
-  }
-
-  return output_array;
-}
-
 TMJKeys TmjMedia::lexify(const char* token, TMJKeys object){
-  // NOTE: this might be better written (maintainable) with X-Macros
+  // XXX: there has to be a better way to do this (maybe std::map?)
   switch(object){
     case mapa:
       if(     strcmp(token, "layers"          ) == 0) return mapLayer;
@@ -126,68 +117,6 @@ TMJKeys TmjMedia::lexify(const char* token, TMJKeys object){
   }
 }
 
-void TmjMedia::prepareParser(json_stream *json, TMJKeys object){
-  enum json_type type = json_next(json);
-  switch (type) {
-    case JSON_STRING:
-      size_t str_len; // This includes the NULL terminator
-      json_get_string(json, &str_len);
-      switch(object){
-        default: break;
-      }
-      break;
-    case JSON_ARRAY: // Consumed '['
-      while (json_peek(json) != JSON_ARRAY_END && !json_get_error(json))
-        prepareParser(json, object);
-      json_next(json); // Consumed ']'
-      break;
-    case JSON_OBJECT: // Consumed '{'
-      while (json_peek(json) != JSON_OBJECT_END && !json_get_error(json)) {
-        json_next(json);
-
-        const char* next_object_str = json_get_string(json, NULL);
-        TMJKeys next_object = lexify(next_object_str, object);
-
-        switch(next_object){
-          case mapNotSupported: case layerNotSupported: case tilesetNotSupported:{
-            // NOTE: this wasn't supposed to have a newline ('\n')
-            // maybe alter log_* to add a newline'less version?
-            log_error("[" << __func__ << "] WARNING: (key:value) pair (\"" << next_object_str << "\":");
-          } break;
-          default: break;
-        }
-
-        prepareParser(json, next_object);
-
-        switch(next_object){
-          case mapNotSupported:
-            log_error(next_object_str << ") is not supported.");
-            break;
-          case layerNotSupported:
-            log_error(next_object_str << ") from Layer " << layers.size() << " is not supported.");
-            break;
-          case tilesetNotSupported:
-            log_error(next_object_str << ") from Tileset " << tilesets.size() << " is not supported.");
-            break;
-          default: break;
-        }
-      }
-      switch(object){
-        case mapLayer: layers.push_back({}); break;
-        case mapTileset: tilesets.push_back({}); break;
-        default: break;
-      }
-      json_next(json); // Consumed '}'
-      break;
-    case JSON_OBJECT_END: case JSON_ARRAY_END: return;
-    case JSON_ERROR:{
-      log_error("error: " << json_get_lineno(json) <<": " << json_get_error(json));
-      exit(EXIT_FAILURE);
-    }
-    default: break;
-  }
-}
-
 void TmjMedia::parse(json_stream *json, TMJKeys object){
   enum json_type type = json_next(json);
   switch (type) {
@@ -210,36 +139,37 @@ void TmjMedia::parse(json_stream *json, TMJKeys object){
         default: break;
       }
     case JSON_NUMBER:{
-      double n = json_get_number(json);
+      f64 n = json_get_number(json);
       switch(object){
-        case mapWidth: width = (int)n; break;
-        case mapHeight: height = (int)n; break;
-        case mapCompressionLevel: compressionLevel = (int)n; break;
-        case mapTileWidth: tileWidth = (int)n; break;
-        case mapTileHeight: tileHeight = (int)n; break;
-        case mapNextLayerId: nextLayerId = (int)n; break;
-        case mapNextObjectId: nextObjectId = (int)n; break;
-        case layerId: layers.back().id = (int)n; break;
-        case layerWidth: layers.back().width = (int)n; break;
-        case layerHeight: layers.back().height = (int)n; break;
-        case layerX: layers.back().x = (int)n; break;
-        case layerY: layers.back().y = (int)n; break;
+        case mapWidth: width = (i32)n; break;
+        case mapHeight: height = (i32)n; break;
+        case mapCompressionLevel: compressionLevel = (i32)n; break;
+        case mapTileWidth: tileWidth = (i32)n; break;
+        case mapTileHeight: tileHeight = (i32)n; break;
+        case mapNextLayerId: nextLayerId = (i32)n; break;
+        case mapNextObjectId: nextObjectId = (i32)n; break;
+        case layerId: layers.back().id = (i32)n; break;
+        case layerWidth: layers.back().width = (i32)n; break;
+        case layerHeight: layers.back().height = (i32)n; break;
+        case layerX: layers.back().x = (i32)n; break;
+        case layerY: layers.back().y = (i32)n; break;
         case layerOpacity: layers.back().opacity = n; break;
-        case tilesetFirstGid: tilesets.back().firstGid = (int)n; break;
-        case tilesetColumns: tilesets.back().columns = (int)n; break;
-        case tilesetTileCount: tilesets.back().tileCount = (int)n; break;
-        case tilesetTileWidth: tilesets.back().tileWidth = (int)n; break;
-        case tilesetTileHeight: tilesets.back().tileHeight = (int)n; break;
-        case tilesetImageWidth: tilesets.back().imageWidth = (int)n; break;
-        case tilesetImageHeight: tilesets.back().imageHeight = (int)n; break;
-        case tilesetMargin: tilesets.back().margin = (int)n; break;
-        case tilesetSpacing: tilesets.back().spacing = (int)n; break;
+        case tilesetFirstGid: tilesets.back().firstGid = (i32)n; break;
+        case tilesetColumns: tilesets.back().columns = (i32)n; break;
+        case tilesetTileCount: tilesets.back().tileCount = (i32)n; break;
+        case tilesetTileWidth: tilesets.back().tileWidth = (i32)n; break;
+        case tilesetTileHeight: tilesets.back().tileHeight = (i32)n; break;
+        case tilesetImageWidth: tilesets.back().imageWidth = (i32)n; break;
+        case tilesetImageHeight: tilesets.back().imageHeight = (i32)n; break;
+        case tilesetMargin: tilesets.back().margin = (i32)n; break;
+        case tilesetSpacing: tilesets.back().spacing = (i32)n; break;
         default: break;
       }
     } break;
     case JSON_STRING:{
       size_t str_len;
       const char* str = json_get_string(json, &str_len);
+
       switch(object){
         case mapOrientation: orientation = str; break;
         case mapRenderOrder: renderOrder = str; break;
@@ -262,100 +192,99 @@ void TmjMedia::parse(json_stream *json, TMJKeys object){
       json_next(json); // Consumed ']'
       break;
     case JSON_OBJECT: // Consumed '{'
+      switch(object){
+        case mapLayer: layers.push_back({}); break;
+        case mapTileset: tilesets.push_back({}); break;
+        default: break;
+      }
       while (json_peek(json) != JSON_OBJECT_END && !json_get_error(json)) {
         json_next(json);
 
         const char* next_object_str = json_get_string(json, NULL);
         TMJKeys next_object = lexify(next_object_str, object);
 
+        switch(next_object){
+          case mapNotSupported: case layerNotSupported: case tilesetNotSupported:{
+            // NOTE: this wasn't supposed to have a newline ('\n')
+            // maybe alter log_* to add a newline'less version?
+            log_error("[" << __func__ << "] WARNING: (key:value) pair (\"" << next_object_str << "\":");
+          } break;
+          default: break;
+        }
+
+        switch(next_object){
+          case mapNotSupported:
+            log_error(next_object_str << ") is not supported.");
+            break;
+          case layerNotSupported:
+            log_error(next_object_str << ") from Layer " << layers.size() << " is not supported.");
+            break;
+          case tilesetNotSupported:
+            log_error(next_object_str << ") from Tileset " << tilesets.size() << " is not supported.");
+            break;
+          default: break;
+        }
+
         parse(json, next_object);
-      }
-      switch(object){
-        case mapLayer: layers.push_back({}); break;
-        case mapTileset: tilesets.push_back({}); break;
-        default: break;
       }
       json_next(json); // Consumed '}'
       break;
     case JSON_OBJECT_END: case JSON_ARRAY_END: return;
+    case JSON_ERROR:{
+      log_error("error: " << json_get_lineno(json) <<": " << json_get_error(json));
+      exit(EXIT_FAILURE);
+    }
   }
 }
 
-void TmjMedia::loadMap(){
-  json_stream json;
-  json_open_string(&json, (const char*)getRawData());
-	json_set_streaming(&json, false);
-
-  prepareParser(&json, mapa);
-
-  if (json_get_error(&json)) {
-    log_error("error: " << json_get_lineno(&json) << ": " << json_get_error(&json));
-    exit(EXIT_FAILURE);
-  }
-  json_close(&json);
-
-  json_open_string(&json, (const char*)getRawData());
-	json_set_streaming(&json, false);
-  parse(&json, mapa);
-  json_close(&json);
-
-  // TODO: verify that this is not needed anymore (since we use C++ and not just C now)
-  //initialized = true;
-}
-
-void TmjMedia::loadLayer(Layers ly){
-  //if(!initialized)
-    //loadMap();
-
-  if(!layers[ly].data){
-    size_t base64_len = layers[ly].encodedData.size();
+void TmjMedia::loadLayer(std::string ly){
+  if(!layersMap[ly].data){
     // Max output length for Base64 decoding
-    size_t max_output_len = (base64_len * 3) / 4;
+    size_t max_output_len = (layersMap[ly].encodedData.size() * 3) / 4;
     // First we decode Base64 to binary, to be able to decompress from zlib
-    // TODO: shared'ify everything (every malloc)
+    // TODO: shared'ify (or unique'ify) everything (every malloc)
     char* binary_data = (char*)malloc(max_output_len);
-    int base64_decoded_len = base64_decode(layers[ly].encodedData, binary_data, max_output_len);
+    i32 base64_decoded_len = base64_decode(layersMap[ly].encodedData, binary_data, max_output_len);
 
     if (base64_decoded_len < 0) {
       log_error("Invalid Base64 data from Map");
       exit(EXIT_FAILURE);
     }
 
-    int zlib_decoded_len;
-    char* zlib_decoded_data = stbi_zlib_decode_malloc(binary_data, base64_decoded_len, &zlib_decoded_len);
-    int int_array_len;
-    layers[ly].data = bytes_to_integers(zlib_decoded_data, zlib_decoded_len, &int_array_len);
+    i32 zlib_decoded_len;
+    u8* zlib_decoded_data = reinterpret_cast<u8*>(stbi_zlib_decode_malloc(binary_data, base64_decoded_len, &zlib_decoded_len));
+    layersMap[ly].data = std::make_shared<i32[]>(width * height);
+
+    for(i32 i = 0; i < height; i++){
+      for(i32 j = 0; j < width; j++){
+        /// NOTE: this inverts the data vertically
+        i32 input_index = ((height - 1 - i) * width + j) * 4;
+        ///
+        layersMap[ly].data[i * width + j] = *reinterpret_cast<u32*>(zlib_decoded_data + input_index);
+      }
+    }
 
     free(zlib_decoded_data);
     free(binary_data);
   }
 }
 
-void TmjMedia::unloadLayer(Layers ly){
-  //free(layers[ly].data);
-  //struct Layer tmp = {0};
-  //memcpy(&layers[ly], &tmp, sizeof(tmp));
+void TmjMedia::unloadLayer(std::string ly){
+  layersMap[ly].data = nullptr;
 }
 
-// TODO: make sure png and mp3 also free and zero everything
-void TmjMedia::unloadMap(){
-  for(int i = 0; i < MAX_LAYERS; i++){
-    // XXX
-    unloadLayer(static_cast<Layers>(i));
-    layers[i].encodedData.clear();
+void TmjMedia::unloadLayers(){
+  for(auto& [lyName, _] : layersMap){
+    unloadLayer(lyName);
+    log_debug("Unloaded layer: " << lyName.c_str());
   }
-  //struct TmjMedia tmp = {0};
-  //memcpy(&tmp, sizeof(tmp));
 }
 
-std::shared_ptr<i32[]> TmjMedia::getLayerData(Layers ly){
-  loadLayer(ly);
-  return layers[ly].data;
+i32 TmjMedia::getLayerData(std::string ly, i32 index){
+  if(!layersMap[ly].data)
+    loadLayer(ly);
+  return layersMap[ly].data[index];
 }
-
-//int* GetLayerBuffer(enum Layers ly){
-//  return get_layer_data(ly);
-//}
 
 i32 TmjMedia::getWidth(){
   return width;

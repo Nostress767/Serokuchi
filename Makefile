@@ -9,13 +9,13 @@ ifdef DEBUG
 	TARGET   := debug
 	CPPFLAGS := -Wall -c -I$(INCDIR) -finput-charset=UTF-8 -MMD -DDEBUG
 	CFLAGS   := -Og
-	CXXFLAGS := -Og -std=c++20
+	CXXFLAGS := -Og -std=c++23
 	LDFLAGS  := -lgdi32 -mconsole -lxinput
 else
 	TARGET   := release
 	CPPFLAGS := -Wall -c -I$(INCDIR) -finput-charset=UTF-8 -MMD
 	CFLAGS   := -O2
-	CXXFLAGS := -O2 -std=c++20
+	CXXFLAGS := -O2 -std=c++23
 	LDFLAGS  := -lgdi32 -mwindows -lxinput
 endif
 

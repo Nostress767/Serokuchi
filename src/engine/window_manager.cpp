@@ -217,7 +217,6 @@ WindowManager::WindowManager(std::wstring name, i32 sizeX, i32 sizeY){
 
   RegisterClass(&windowClass);
   root = std::make_unique<Window>(windowClass, sizeX, sizeY, 1, name, 0, WindowType::root);
-  //root->setWindowSize(root->width * windowScale, root->height * windowScale);
 }
 
 void WindowManager::beginFrame() {
@@ -535,9 +534,6 @@ void WindowManager::createWindow(std::wstring windowTitle, i32 windowZOrder, i32
   // Resort
   for(auto &[_, wHandle] : Window::windowOrder)
     SetWindowPos(wHandle, HWND_TOP, -1, -1, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-  if(windowScale > 1)
-    newWindow->setWindowSize(newWindow->width * windowScale, newWindow->height * windowScale);
 }
 
 const Key& WindowManager::operator()(SpecialKey spKey) const{

@@ -37,6 +37,11 @@ struct Window {
   Mouse mouse = {};
 
   std::unique_ptr<u32[]> bitmapMemory = nullptr;
+  // NOTE: assuming here that pointers remain the same
+  // (since PngMedia will always be passed as a reference)
+  std::map<const PngMedia*, std::unique_ptr<BitmapData>> spritesData;
+  std::multimap<i32, std::shared_ptr<Sprite>> spritesDrawingOrder;
+  std::map<std::string, std::shared_ptr<Sprite>> sprites;
 
   // NOTE: could be used if more performance is required
   HDC baseBitmapDC = NULL;
@@ -57,6 +62,11 @@ struct Window {
   void d(i32 x, i32 y, u32 color, bool zeroAlpha = false);
   void dSquare(i32 size, i32 x, i32 y, u32 color, bool zeroAlpha = false);
   void setWindowSize(i32 sizeX, i32 sizeY);
+
+  void createSprite(std::string name, PngMedia& image, i32 layer = 0);
+  void createSprite(std::string name, PngMedia& image, i32 x, i32 y, i32 layer = 0);
+  // TODO: port all the sprites functions
+  //void moveSprite(std::string name, i32 x, i32 y);
 
   // TODO: reinvestigate these two functions
   // NOTE: fonts are assumed to be:

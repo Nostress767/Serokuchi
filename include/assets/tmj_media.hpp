@@ -44,12 +44,12 @@ struct Layer {
     i32 x, y; // <- Have no idea what the use for this is
     bool visible;
     f64 opacity;
-    std::string compression;//[16]; // Uncompressed, zlib or Zstandard (Only zlib supported for now)
-    std::string encoding;//[16]; // CSV or Base64 (Only Base64 supported for now)
-    std::string type;//[32]; // Only tilelayer supported for now
-    //unsigned i32 ti32Color; // Of type #xxxxxxxx, not yet supported
-    // float opacity;
-    std::string name;//[256];
+    std::string compression; // Uncompressed, zlib or Zstandard (Only zlib supported for now)
+    std::string encoding; // CSV or Base64 (Only Base64 supported for now)
+    std::string type; // Only tilelayer supported for now
+    // u32 tintColor; // Of type #xxxxxxxx, not yet supported
+    // f32 opacity;
+    std::string name;
     std::string encodedData;
     std::shared_ptr<i32[]> data; // Base64-zlib converted to i32 array
 };
@@ -59,22 +59,11 @@ struct TileSet{
     i32 columns;
     i32 tileCount;
     i32 tileWidth, tileHeight;
-    std::string name;//[256];
-    std::string image;//[256];
+    std::string name;
+    std::string image;
     i32 imageWidth, imageHeight;
     i32 margin, spacing;
 };
-
-// NOTE: this may be changed later
-enum Layers{
-    FLOOR = 0, WALLS, CEILING, // This order has to be respected in Tiled
-    MAX_LAYERS                   // This means Ceiling on top, then Walls, then Floor
-};
-
-// TODO: put this inside the class
-//i32* GetLayerBuffer(struct TmjMedia* md, enum Layers ly);
-//i32 GetMapWidth(struct TmjMedia* md);
-//i32 GetMapHeight(struct TmjMedia* md);
 
 class TmjMedia : private Media{
 private:
@@ -83,36 +72,33 @@ private:
   i32 width, height;
   bool infinite;
   i32 compressionLevel; // Hopefully always -1
-  std::string orientation;//[32]; // Orthogonal, Isometric, Isometric (Staggered), Hexagonal (Staggered)
-  std::string renderOrder;//[16]; // Right Down, Right Up, Left Down, Left Up,
-  std::string tiledVersion;//[16]; // Made for Tiled version 1.10.1
-  std::string version;//[16]; // Made for version 1.10
+  std::string orientation; // Orthogonal, Isometric, Isometric (Staggered), Hexagonal (Staggered)
+  std::string renderOrder; // Right Down, Right Up, Left Down, Left Up,
+  std::string tiledVersion; // Made for Tiled version 1.10.1
+  std::string version; // Made for version 1.10
   i32 tileWidth, tileHeight;
-  std::string type;//[16]; // Only map is supported for now
+  std::string type; // Only map is supported for now
   i32 nextLayerId, nextObjectId;
   
-  std::vector<Layer> layers;//[MAX_LAYERS]; // Ceiling, Walls and Floor (for now)
-  std::vector<TileSet> tilesets;//[MAX_TILESETS];
+  std::vector<Layer> layers;
+  std::map<std::string, Layer> layersMap;
+  std::vector<TileSet> tilesets;
+  std::map<std::string, TileSet> tilesetsMap;
 
 public:
   TmjMedia(std::string file, u8* bin, size_t sz);
-  // TODO:
-  //~TmjMedia();
 
   TMJKeys lexify(const char* token, TMJKeys object);
-  void prepareParser(json_stream *json, TMJKeys object);
   void parse(json_stream *json, TMJKeys object);
-  void loadMap();
-  void loadLayer(Layers ly);
-  void unloadLayer(Layers ly);
-  void unloadMap();
-  std::shared_ptr<i32[]> getLayerData(Layers ly);
+  void loadLayer(std::string ly);
+  void unloadLayer(std::string ly);
+  void unloadLayers();
+  i32 getLayerData(std::string ly, i32 index);
   i32 getWidth();
   i32 getHeight();
 };
 
 i32 base64_decode(const std::string *input, char *output, size_t output_len);
-std::shared_ptr<i32[]> bytes_to_integers(const char* input, i32 input_len, i32* output_len);
 
 #define ___include_tmj(filename, extension) \
   media_binary(filename, extension) \

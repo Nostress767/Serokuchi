@@ -44,29 +44,15 @@ i32 main(void) {
   test_music.loadBGM();
 
   // TODO: fix this violation of STYLE
-  Sprite test_spr(&aristotelio_portrait_black);
-  Sprite test_spr2(&aristotelio_map);
-  Sprite test_spr2_5(&aristotelio_map);
-  Sprite test_spr3(&overworld);
-  Sprite test_spr4(&aristotelio_reduced_portrait_black);
-  Sprite test_spr5(&tile_test);
-  test_spr.x = 40;
-  test_spr.y = 40;
-  test_spr2.x = 296;
-  test_spr2.y = 40;
-  test_spr2_5.x = 456;
-  test_spr2_5.y = 30;
-  test_spr4.x = 386;
-  test_spr4.y = 140;
+  wm[L"Layer 5"]->createSprite("test_spr", aristotelio_portrait_black, 40, 40);
+  wm[L"Layer 2"]->createSprite("test_spr2", aristotelio_map, 296, 40);
+  wm[L"Layer 2.5"]->createSprite("test_spr2_5", aristotelio_map, 456, 30);
+  wm[L"Layer 0"]->createSprite("test_spr3", overworld, 0, 0);
+  wm[L"Layer 2"]->createSprite("Test Map", aristotelio_map);
 
-  //wm[L"Layer 1"]->c(0);
-  wm[L"Layer 0"]->dSprite(&test_spr3);
-  wm[L"Layer 2"]->dSprite(&test_spr2);
-  wm[L"Layer 2.5"]->dSprite(&test_spr2_5);
-
-  wm[L"Layer 1"]->dSquare(24, 50, 180, ARGB(1, 0, 32, 0), true);
-  wm[L"Layer 1"]->dSquare(24, 80, 180, ARGB(1, 0, 64, 0), true);
-  wm[L"Layer 1"]->dSquare(24, 110, 180, ARGB(1, 0, 96, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 50, 185, ARGB(1, 0, 32, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 80, 190, ARGB(1, 0, 64, 0), true);
+  wm[L"Layer 1"]->dSquare(24, 110, 195, ARGB(1, 0, 96, 0), true);
 
   wm[L"Layer 1"]->dSquare(24, 200, 30, ARGB(1, 32, 0, 0), true);
   wm[L"Layer 1"]->dSquare(24, 230, 30, ARGB(1, 64, 0, 0), true);
@@ -91,18 +77,16 @@ i32 main(void) {
       continue;
     }
     if(wm('F').isPressed){
-      map_test.loadMap();
-      auto test = map_test.getLayerData(FLOOR);
       i32 w = map_test.getWidth(), h = map_test.getHeight();
       for(i32 i = 0; i <  w * h; i++){
         if(i % w == 0)
           std::cout << "\n";
-        std::cout << std::format("{:03}", test[i]) << " ";
+        std::cout << std::format("{:03}", map_test.getLayerData("Tiles", i)) << " ";
       }
       std::cout << "\n";
-      toggleMap = true;
-      wm[L"Layer 0"]->scale = 3;
-      wm[L"Layer 0"]->setWindowSize(320, 180);
+      //toggleMap = true;
+      //wm[L"Layer 0"]->scale = 3;
+      //wm[L"Layer 0"]->setWindowSize(320, 180);
     }
 
     if(wm('W').isPressed){
@@ -121,7 +105,8 @@ i32 main(void) {
     if(wm('G').isPressed){
       wm[L"Layer 0"]->scale = 2;
       wm[L"Layer 0"]->setWindowSize(480, 270);
-      wm[L"Layer 0"]->dSprite(&test_spr3);
+      //wm[L"Layer 0"]->toggleSprite("test_spr3");
+      //wm[L"Layer 0"]->dSprite(&test_spr3);
       toggleMap = false;
     }
     if(wm('E').isPressed){
@@ -134,7 +119,6 @@ i32 main(void) {
 
     if(toggleMap){
       wm[L"Layer 0"]->c(0);
-      auto test = map_test.getLayerData(FLOOR);
       // test_spr5
       for(i32 mapTileGridX = 0; mapTileGridX < map_test.getWidth(); mapTileGridX++){
         if(cameraX + mapTileGridX * tileSize > 480)
@@ -142,8 +126,8 @@ i32 main(void) {
         for(i32 mapTileGridY = 0; mapTileGridY < map_test.getHeight(); mapTileGridY++){
           if(cameraY + mapTileGridY * tileSize > 270)
             break;
-          i32 tileXOffsetWithinSprite = (test[mapTileGridY * map_test.getWidth() + mapTileGridX] - 1) % 10;
-          i32 tileYOffsetWithinSprite = 9 - (test[mapTileGridY * map_test.getWidth() + mapTileGridX] - 1) / 10;
+          i32 tileXOffsetWithinSprite = (map_test.getLayerData("Tiles", mapTileGridY * map_test.getWidth() + mapTileGridX) - 1) % 10;
+          i32 tileYOffsetWithinSprite = 9 - (map_test.getLayerData("Tiles", mapTileGridY * map_test.getWidth() + mapTileGridX) - 1) / 10;
           //log_debug(tileOffsetWithinSprite);
           //log_debug(
           //    test_spr5.data[tileOffsetWithinSprite * tileSize + 0][((test[mapTileGridY * map_test.getWidth() + mapTileGridX] - 1) * tileSize + 0) * 4] << " | " <<
@@ -159,14 +143,15 @@ i32 main(void) {
           //    );
           for(i32 tileInternalX = 0; tileInternalX < tileSize; tileInternalX++){
             for(i32 tileInternalY = 0; tileInternalY < tileSize; tileInternalY++){
-              wm[L"Layer 0"]->d(cameraX + mapTileGridX * tileSize + tileInternalX, cameraY + mapTileGridY * tileSize + tileInternalY,
-                  ARGB(
-                      test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 3],
-                      test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 0],
-                      test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 1],
-                      test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 2]
-                    )
-                  );
+              //wm[L"Layer 0"]->d(cameraX + mapTileGridX * tileSize + tileInternalX, cameraY + mapTileGridY * tileSize + tileInternalY,
+              //    test_spr5.data[(tileYOffsetWithinSprite * tileSize + tileInternalY) * test_spr5.width + tileXOffsetWithinSprite * tileSize + tileInternalX]
+              //    //ARGB(
+              //    //    test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 3],
+              //    //    test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 0],
+              //    //    test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 1],
+              //    //    test_spr5.data[tileYOffsetWithinSprite * tileSize + tileInternalY][(tileXOffsetWithinSprite * tileSize + tileInternalX) * 4 + 2]
+              //    //  )
+              //    );
             }
           }
           //break;
@@ -175,11 +160,9 @@ i32 main(void) {
       }
     }
 
-    wm[L"Layer 5"]->c(0);
-    wm[L"Layer 5"]->dSprite(&test_spr);
-    wm[L"Layer 5"]->dSprite(&test_spr4);
-    wm[L"Layer 5"]->drawText(font8x8, 0, 30, "FPS: " + std::to_string(wm.getFPS()), 0xFFFF0000, 2, -2, 10);
-    wm[L"Layer 5"]->drawText(font8x8, 0, 10, "We had a lot of fun growing up", 0xFFFF0000, 2, -2, 10);
+    //wm[L"Layer 5"]->c(0);
+    //wm[L"Layer 5"]->drawText(font8x8, 0, 30, "FPS: " + std::to_string(wm.getFPS()), 0xFFFF0000, 2, -2, 10);
+    //wm[L"Layer 5"]->drawText(font8x8, 0, 10, "We had a lot of fun growing up", 0xFFFF0000, 2, -2, 10);
   }
 
   return 0;
